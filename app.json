@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "Pack_And_Go",
+    "slug": "Pack_And_Go",
+    "scheme": "packandgo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "packandgo"
+    },
+    "android": {
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "packandgo",
+              "host": "*"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/adaptive-icon.png",
+      "backgroundColor": "#ffffff"
+    },
+    "softwareKeyboardLayoutMode": "pan",
+    "package": "com.msaeedbingharib.Pack_And_Go"
+  },
+  "web": {
+    "favicon": "./assets/favicon.png"
+  },
+  "extra": {
+    "eas": {
+      "projectId": "67e7360a-1d05-4cb8-bae3-44b424c68c00"
+    }
+  },
+  "plugins": [
+    "expo-build-properties",
+    "expo-router",
+    "expo-secure-store",
+    "expo-document-picker"
+  ]
+}
