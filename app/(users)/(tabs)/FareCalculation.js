@@ -51,7 +51,7 @@ const CompanyFare = () => {
   }, []);
 
   const fetchPublishableKey = async () => {
-    const response = await fetch("http://192.168.1.9:3000/pubkey", {
+    const response = await fetch("http://192.168.1.22:3000/pubkey", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -115,7 +115,7 @@ const CompanyFare = () => {
       if (!params) {
         alert("Failed to fetch payment params");
         return;
-      } 
+      }
 
       const { paymentIntent, ephemeralKey, customer } = params;
 
@@ -145,27 +145,6 @@ const CompanyFare = () => {
     }
   };
 
-  // const handlePayment = async () => {
-  //   const initialized = await initializePayment();
-  //   if (!initialized) return;
-
-  //   try {
-  //     const { error } = await presentPaymentSheet();
-  //     if (error) {
-  //       console.log("Payment error:", error);
-  //       alert(`Payment failed: ${error.message}`);
-  //       return;
-  //     }
-
-  //     await updateDoc(doc(DB, "furnitureOrders", jobId), { status: 'processing' });
-  //     alert("Payment successful! Your order is confirmed.");
-  //   } catch (error) {
-  //     console.error("Present payment sheet error:", error);
-  //     alert(`Error: ${error.message}`);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
   const handlePayment = async () => {
     const initialized = await initializePayment();
     if (!initialized) return;
@@ -207,8 +186,25 @@ const CompanyFare = () => {
           paidAt: serverTimestamp(),
         },
       });
+
+      const notificationData = {
+        message: `Payment of ${fare.toFixed(
+          2
+        )} PKR has been successfully made for Job ID: ${jobId}.`,
+        type: "payment",
+        timestamp: serverTimestamp(),
+        read: false,
+        user_info: {
+          userId: user.id,
+          jobId: jobId,
+          amount: fare,
+        },
+      };
+      const notificationsRef = collection(DB, "notifications");
+      await addDoc(notificationsRef, notificationData);
+
       try {
-        await fetch("http://192.168.1.9:4000/api/Payment-Notification", {
+        await fetch("http://192.168.1.22:4000/api/Payment-Notification", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -234,7 +230,7 @@ const CompanyFare = () => {
     const total = fare;
     try {
       console.log("Requesting payment sheet params with total:", total);
-      const response = await fetch("http://192.168.1.9:3000/payment-sheet", {
+      const response = await fetch("http://192.168.1.22:3000/payment-sheet", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

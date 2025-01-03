@@ -18,7 +18,9 @@ import {
   getDocs,
   doc,
   updateDoc,
-  onSnapshot, 
+  onSnapshot,
+  serverTimestamp,
+  addDoc,
 } from "firebase/firestore";
 import MapView, { Marker } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
@@ -139,6 +141,33 @@ const DriverHome = () => {
         startTime,
       });
 
+      // Find the existing notification for this job ID
+      const notificationsRef = collection(DB, "notifications");
+      const notificationQuery = query(
+        notificationsRef,
+        where("user_info.jobId", "==", driverData.assignedJob.jobId)
+      );
+      const notificationSnapshot = await getDocs(notificationQuery);
+
+      if (!notificationSnapshot.empty) {
+        // Get the user ID from the notification
+        const notificationDoc = notificationSnapshot.docs[0];
+        const userId = notificationDoc.data().user_info.userId;
+        const newNotificationData = {
+          message: `The Job with ID ${driverData.assignedJob.jobId} has started.`,
+          type: "job",
+          timestamp: serverTimestamp(),
+          read: false,
+          user_info: {
+            userId: userId, // From the found notification
+            jobId: driverData.assignedJob.jobId,
+            amount: driverData.assignedJob.orderDetails.fare,
+          },
+        };
+        await addDoc(notificationsRef, newNotificationData);
+      } else {
+        console.error("No notification found for the given job ID.");
+      }
       const subscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
@@ -178,21 +207,55 @@ const DriverHome = () => {
     try {
       const jobRef = doc(DB, "furnitureOrders", driverData.assignedJob.jobId);
 
+      // Update job status to completed
       await updateDoc(jobRef, {
         status: "completed",
         isCompleted: true,
         endTime: new Date().toISOString(),
       });
 
+      // Find the existing notification for this job ID
+      const notificationsRef = collection(DB, "notifications");
+      const notificationQuery = query(
+        notificationsRef,
+        where("user_info.jobId", "==", driverData.assignedJob.jobId)
+      );
+      const notificationSnapshot = await getDocs(notificationQuery);
+
+      if (!notificationSnapshot.empty) {
+        // Get the user ID from the notification
+        const notificationDoc = notificationSnapshot.docs[0];
+        const userId = notificationDoc.data().user_info.userId;
+
+        // Add a new notification for the user
+        const newNotificationData = {
+          message: `The Job with ID ${driverData.assignedJob.jobId} has been completed.`,
+          type: "job",
+          timestamp: serverTimestamp(),
+          read: false,
+          user_info: {
+            userId: userId, // From the found notification
+            jobId: driverData.assignedJob.jobId,
+            amount: driverData.assignedJob.orderDetails.fare, // Use the fare from the job details
+          },
+        };
+        await addDoc(notificationsRef, newNotificationData);
+
+        // Mark the driver as available and clear the assigned job
+      } else {
+        console.error("No notification found for the given job ID.");
+      }
+
       await updateDoc(doc(DB, "drivers", driverData.id), {
         isAvailable: true,
         assignedJob: {},
       });
-
+      // Stop location sharing
       locationSubscription?.remove();
       setLocationSubscription(null);
       setJobStarted(false);
       setSharingLocation(false);
+
       Alert.alert("Job Completed", "The job has been successfully completed.");
     } catch (error) {
       console.error("Failed to complete job:", error);
